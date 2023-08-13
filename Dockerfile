@@ -27,6 +27,7 @@ RUN set -x && \
     TEMP_PACKAGES+=(build-essential) && \
     TEMP_PACKAGES+=(gcc) && \
     TEMP_PACKAGES+=(make) && \
+    TEMP_PACKAGES+=(python3-dev) && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     "${KEPT_PACKAGES[@]}" \
