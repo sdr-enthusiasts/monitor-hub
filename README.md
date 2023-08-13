@@ -40,6 +40,8 @@ The page does not auto-scroll to the bottom. This will be improved in future ver
 
 If a container SHOULD be running, but it is not, the webpage will not show it. This will be improved in future versions.
 
+Healthcheck status is not shown. This will be improved in future versions.
+
 A potential future improvement would be to add a search bar to filter the containers shown or log entries.
 
 Another potential future improvement would be to clean up log entries by removing the container-added time stamp and using the docker daemon one. If you see two time stamps, it's because of this.
