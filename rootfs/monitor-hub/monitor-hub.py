@@ -58,7 +58,7 @@ class MonitorContainer:
     def __ne__(self, other):
         return not (self == other)
 
-    def get_log(self, num_lines=10):
+    def get_log(self, num_lines=50):
         if not num_lines:
             return self.log
 
@@ -66,6 +66,11 @@ class MonitorContainer:
 
     def get_name(self):
         return f"{self.name}"
+
+    def clean_log(self):
+        while len(self.log) > 50:
+            # remove the first element
+            self.log.pop(0)
 
     # function to monitor a container and append the logs for processing to clients
 
@@ -85,6 +90,8 @@ class MonitorContainer:
             buffered_line = buffered_line.strip()
             # print(format_line(line.decode("utf-8"), container.name))
             self.log.append(buffered_line)
+            self.clean_log()
+
             if container_ready:
                 socketio.emit(
                     "new_log",
