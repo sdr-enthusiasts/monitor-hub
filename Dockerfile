@@ -1,9 +1,16 @@
+FROM node:20.5.0-slim AS typescript-builder
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+COPY / /
+RUN set -xe && \
+    npm install && \
+    npm run build
+
 FROM ghcr.io/sdr-enthusiasts/docker-baseimage:python-test-pr
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV S6_BEHAVIOUR_IF_STAGE2_FAILS=2 \
     VERBOSE_LOGGING="false"
-
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 COPY rootfs/ /
 
@@ -28,6 +35,9 @@ RUN set -x && \
     tee /etc/apt/sources.list.d/docker.list > /dev/null && \
     apt-get update && \
     apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y --no-install-recommends  && \
-    python3 -m pip install --no-cache-dir --break-system-packages -r /monitor-hub/requirements.txt & \
+    pushd /monitor-hub && \
+    python3 -m pip install --no-cache-dir --break-system-packages -r requirements.txt && \
     # Clean up
     rm -rf /src/* /tmp/* /var/lib/apt/lists/*
+
+COPY --from=typescript-builder /dist/* /monitor-hub/static/js
