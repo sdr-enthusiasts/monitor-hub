@@ -55,6 +55,8 @@ RUN set -x && \
     VERSION=$(cat /package.json| grep 'version' | cut -d '"' -f 4) && \
     echo "${VERSION}" > /CONTAINER_VERSION && \
     # Clean up
+    apt-get remove -y "${TEMP_PACKAGES[@]}" && \
+    apt-get autoremove -y && \
     rm -rf /src/* /tmp/* /var/lib/apt/lists/* /package.json
 
 COPY --from=typescript-builder /dist/* /monitor-hub/static/js
