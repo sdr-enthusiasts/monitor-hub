@@ -33,6 +33,10 @@ body {
   flex-grow: 1;
 }
 
+.selected {
+  color: var(--text-highlight);
+}
+
 li:hover {
   cursor: pointer;
   color: var(--text-highlight);

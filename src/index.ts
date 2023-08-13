@@ -75,6 +75,15 @@ function show_logs(name: any) {
   // clear the log list
   $("#container-logs").empty();
 
+  // loop through all of the li elements and remove the class "selected" and append the class "selected" if the id matches the name
+  $("#container-list li").each(function () {
+    if ($(this).attr("id") == name) {
+      $(this).addClass("selected");
+    } else {
+      $(this).removeClass("selected");
+    }
+  });
+
   let logs = containers[name].logs;
 
   // add the logs to the page
