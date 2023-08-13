@@ -57,7 +57,7 @@ class MonitorContainer:
     def __ne__(self, other):
         return not (self == other)
 
-    def get_log(self, num_lines=None):
+    def get_log(self, num_lines=10):
         if not num_lines:
             return self.log
 
