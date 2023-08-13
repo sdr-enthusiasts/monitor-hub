@@ -14,6 +14,7 @@ ENV S6_BEHAVIOUR_IF_STAGE2_FAILS=2 \
     S6_LOGGING="0"
 
 COPY rootfs/ /
+COPY /package.json /package.json
 
 # hadolint ignore=SC1091
 RUN set -x && \
@@ -47,7 +48,9 @@ RUN set -x && \
     rm /etc/nginx/nginx.conf && \
     cp /etc/nginx.monitor-hub/nginx.conf /etc/nginx/nginx.conf && \
     rm -rv /etc/nginx.monitor-hub && \
+    VERSION=$(cat /package.json| grep 'version' | cut -d '"' -f 4) && \
+    echo "${VERSION}" > /CONTAINER_VERSION && \
     # Clean up
-    rm -rf /src/* /tmp/* /var/lib/apt/lists/*
+    rm -rf /src/* /tmp/* /var/lib/apt/lists/* /package.json
 
 COPY --from=typescript-builder /dist/* /monitor-hub/static/js
