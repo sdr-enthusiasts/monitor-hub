@@ -72,19 +72,30 @@ class MonitorContainer:
 
     def container_logs(self, container):
         global container_ready
+        buffered_line = ""
         for line in container.logs(stream=True, timestamps=True):
+            try:
+                buffered_line = buffered_line + line.decode("utf-8")
+                if not buffered_line.endswith("\n"):
+                    continue
+            except:
+                print(format_line(f"Error decoding line: {line}", container.name))
+                buffered_line = ""
+                continue
+
+            buffered_line = buffered_line.strip()
             # print(format_line(line.decode("utf-8"), container.name))
-            self.log.append(line.decode("utf-8").strip())
+            self.log.append(buffered_line)
             if container_ready:
                 socketio.emit(
                     "new_log",
                     {
                         "name": container.name,
-                        "log": line.decode("utf-8").strip(),
+                        "log": buffered_line,
                     },
                     namespace="/main",
                 )
-
+            buffered_line = ""
         # the container has exited so we can remove it from the list
         print("Container {} has exited".format(container.name))
         if container_ready:
@@ -99,6 +110,7 @@ class MonitorContainer:
 
 
 def exit_handler(signal_received, _):
+    global keep_watching
     # Handle any cleanup here
     print(f"Exit signal {signal_received} detected. Exiting gracefully")
     keep_watching = False
@@ -111,6 +123,7 @@ def format_line(line, container_name):
 
 
 def pause_and_check():
+    global keep_watching
     while keep_watching:
         check_for_new_containers()
         time.sleep(5)
