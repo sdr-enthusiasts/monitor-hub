@@ -1,0 +1,39 @@
+:root {
+  --background: rgb(34, 40, 49);
+  --element-highlight: rgb(57, 62, 70);
+  --text-highlight: rgb(255, 211, 105);
+  --text-lighter: rgb(238, 238, 238);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text-lighter);
+  font-family: "Inter", sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.column {
+  display: flex;
+  padding: 2rem;
+}
+
+.left {
+  flex-shrink: 1;
+  padding-right: 2rem;
+}
+
+.right {
+  flex-grow: 1;
+}
+
+li:hover {
+  cursor: pointer;
+  color: var(--text-highlight);
+}
