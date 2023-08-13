@@ -18,18 +18,23 @@ Monitor Hub is a simple docker container that enables you to view logs from all 
       - TZ=${FEEDER_TZ}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-
+    tmpfs:
+      - /run:exec,size=64M
+      - /var/log
+      - /tmp
 ```
 
 Likely you will need to amend the port line if port `80` is in use on your host or in docker.
 
 ## Limitations and Future Improvements
 
-Currently, the container will initially show only 10 lines of logs from each container. Once connected, new lines from the containers are appended and you can scroll through them. Loading the page took forever without this limitation with any number of containers that had been running. This will be improved in future versions.
+***If you have a large stack of containers, OR you have containers that contain a significant number of log entries, the page will not be available until all log entries are processed. This may take a minute or two to accomplish***
+
+Currently, the container will show up to 100 lines of logs (50 on page load) from each container. This is done to save infinite scrolling and bandwidth. This will be improved by adding a "load more" (or simililar idea) button in the future.
 
 The webpage is a bit basic. While this entire project doesn't need much complication, it's a bit basic for my liking.
 
-***If you have a large stack of containers, OR you have containers that contain a significant number of log entries, the page will not be available until all log entries are processed. This may take a minute or two to accomplish***
+The webpage is unusable on mobile. This will be improved in future versions.
 
 The page does not auto-scroll to the bottom. This will be improved in future versions.
 

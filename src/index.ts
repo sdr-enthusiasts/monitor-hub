@@ -70,6 +70,11 @@ $((): void => {
 
     if (active_container == data.name) {
       $("#container-logs").append(generate_log_element(data.log));
+
+      // if there are more than 100 logs, remove the first one
+      while ($("#container-logs p").length > 100) {
+        $("#container-logs p").first().remove();
+      }
     }
   });
 
@@ -104,6 +109,7 @@ window.show_logs = function (name: any) {
 };
 
 function generate_log_element(log: any) {
+  // BE CAREFUL HERE. IF YOU CHANGE THE P TAG TO A DIFFERENT TAG, YOU MUST CHANGE THE REMOVE LOGS CODE IN THE NEW_LOG EVENT
   return `<p>${stripAnsi(log)}</p>`;
 }
 
