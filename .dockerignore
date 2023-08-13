@@ -2,3 +2,5 @@
 .github
 LICENSE
 .gitattributes
+dist
+node_modules

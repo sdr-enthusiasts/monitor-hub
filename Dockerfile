@@ -7,6 +7,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 COPY rootfs/ /
 
+# hadolint ignore=SC1091
 RUN set -x && \
     TEMP_PACKAGES=() && \
     KEPT_PACKAGES=() && \
@@ -25,6 +26,8 @@ RUN set -x && \
     "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian \
     "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
     tee /etc/apt/sources.list.d/docker.list > /dev/null && \
-    apt update && \
-    apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y && \
-    python3 -m pip install --no-cache-dir --break-system-packages -r /monitor-hub/requirements.txt
+    apt-get update && \
+    apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y --no-install-recommends  && \
+    python3 -m pip install --no-cache-dir --break-system-packages -r /monitor-hub/requirements.txt & \
+    # Clean up
+    rm -rf /src/* /tmp/* /var/lib/apt/lists/*

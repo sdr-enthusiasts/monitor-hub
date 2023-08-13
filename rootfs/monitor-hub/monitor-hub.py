@@ -1,4 +1,4 @@
-#!/bin/python3
+#!/usr/bin/python3
 
 import eventlet
 
@@ -31,7 +31,7 @@ socketio = SocketIO(
 # a list of threads
 
 check_thread = None
-container_threads = []
+container_classes = []
 containers = []
 
 keep_watching = True
@@ -58,19 +58,40 @@ class MonitorContainer:
         return not (self == other)
 
     def get_log(self, num_lines=10):
+        if len(self.log) < num_lines:
+            return self.log
+
         return self.log[-num_lines:]
+
+    def get_name(self):
+        return f"{self.name}"
 
     # function to monitor a container and append the logs for processing to clients
     # TODO: Capture and politely handle program exit
 
     def container_logs(self, container):
-        for line in container.logs(stream=True):
-            print(format_line(line.decode("utf-8"), container.name))
-            self.log.append(format_line(line.decode("utf-8"), container.name))
+        for line in container.logs(stream=True, timestamps=True):
+            # print(format_line(line.decode("utf-8"), container.name))
+            self.log.append(line.decode("utf-8").strip())
+            socketio.emit(
+                "new_log",
+                {
+                    "name": container.name,
+                    "log": line.decode("utf-8").strip(),
+                },
+                namespace="/main",
+            )
 
         # the container has exited so we can remove it from the list
         print("Container {} has exited".format(container.name))
+        socketio.emit(
+            "container_exit",
+            {"name": container.name},
+            namespace="/main",
+        )
         containers.remove(container.name)
+        # remove container from the list of container classes
+        container_classes.remove(self)
 
 
 def exit_handler(signal_received, _):
@@ -100,9 +121,43 @@ def check_for_new_containers():
             t = Thread(target=c.container_logs, args=(container,))
             print(f"Starting to monitor {container.name}")
             containers.append(container.name)
+            print(f"New container: {c.get_name()}")
+            socketio.emit(
+                "new_container",
+                {
+                    "container": {
+                        "status": "running",
+                        "name": c.get_name(),
+                    }
+                },
+                namespace="/main",
+            )
             # start the thread
             t.start()
-            container_threads.append(t)
+            container_classes.append(c)
+
+
+# main route
+@app.route("/")
+def index():
+    # only by sending this page first will the client be connected to the socketio instance
+    return render_template("index.html")
+
+
+@socketio.on("connect", namespace="/main")
+def main_connect():
+    print("Client connected")
+    requester = request.sid
+    output = {}
+
+    for container in container_classes:
+        output[container.name] = {
+            "logs": container.get_log(),
+            "status": "running",
+            "name": container.name,
+        }
+
+    socketio.emit("connect_data", output, namespace="/main", to=requester)
 
 
 # main function
@@ -112,4 +167,5 @@ if __name__ == "__main__":
     check_thread = Thread(target=pause_and_check)
     check_thread.start()
     # start the thread
+
     socketio.run(app, host="0.0.0.0", port=8888)
