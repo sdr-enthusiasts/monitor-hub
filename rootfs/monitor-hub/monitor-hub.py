@@ -68,7 +68,6 @@ class MonitorContainer:
         return f"{self.name}"
 
     # function to monitor a container and append the logs for processing to clients
-    # TODO: Capture and politely handle program exit
 
     def container_logs(self, container):
         global container_ready
