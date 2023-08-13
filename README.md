@@ -29,7 +29,11 @@ Currently, the container will initially show only 10 lines of logs from each con
 
 The webpage is a bit basic. While this entire project doesn't need much complication, it's a bit basic for my liking.
 
-If you have a large stack of containers, OR you have containers that contain a significant number of log entries, the page will not be available until all log entries are processed.
+***If you have a large stack of containers, OR you have containers that contain a significant number of log entries, the page will not be available until all log entries are processed. This may take a minute or two to accomplish***
+
+Some containers use "special characters" that your terminal program interprets as color codes. These will show up in the logs as the control characters. This will be improved in future versions.
+
+The page does not auto-scroll to the bottom. This will be improved in future versions.
 
 If a container SHOULD be running, but it is not, the webpage will not show it. This will be improved in future versions.
 
