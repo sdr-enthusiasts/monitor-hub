@@ -24,6 +24,9 @@ RUN set -x && \
     KEPT_PACKAGES+=(curl) & \
     KEPT_PACKAGES+=(gnupg) && \
     KEPT_PACKAGES+=(nginx-light) && \
+    TEMP_PACKAGES+=(build-essential) && \
+    TEMP_PACKAGES+=(gcc) && \
+    TEMP_PACKAGES+=(make) && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     "${KEPT_PACKAGES[@]}" \
