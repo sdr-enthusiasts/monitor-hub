@@ -1,0 +1,50 @@
+server {
+  listen 80 default_server;
+  root /monitor-hub;
+  server_name _;
+
+  proxy_http_version 1.1;
+  proxy_set_header Upgrade $http_upgrade;
+  proxy_set_header Connection $http_connection;
+  proxy_set_header Host $host;
+  proxy_set_header  X-Real-IP $remote_addr;
+  proxy_set_header  X-Real-Port $remote_port;
+  include /etc/nginx/mime.types;
+
+  # mjs is not in default mime types, add in here
+  types {
+    application/javascript mjs;
+  }
+	default_type application/octet-stream;
+  access_log off;
+
+  #Catch 40x errors:
+  #error_page 400 401 402 403 404 = @RedirectToHome;
+
+  #Catch 50x errors:
+  #error_page 500 501 502 503 504 = @RedirectToHome;
+
+  #location @RedirectToHome {
+  #  return 302 $scheme://$http_host;
+  #}
+
+  # cache all of the files
+  location ~ \.(css|js|png|jpg|jpeg|gif|ico|woff|woff2|ttf|svg|eot|otf|map|mjs|mp3)$ {
+    # TODO: re-enable this when cache busting is implemented
+    #expires 30d;
+    add_header Cache-Control 'no-store';
+    #add_header Cache-Control "public";
+    root /monitor-hub;
+  }
+
+  # proxy pass the web socket to gunicorn
+  location /socket.io {
+    proxy_pass http://127.0.0.1:8888/socket.io;
+  }
+
+  # index page
+  location = / {
+    add_header Cache-Control 'no-store';
+    try_files /templates/index.html =404;
+  }
+}

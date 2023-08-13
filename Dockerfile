@@ -10,7 +10,8 @@ FROM ghcr.io/sdr-enthusiasts/docker-baseimage:python-test-pr
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV S6_BEHAVIOUR_IF_STAGE2_FAILS=2 \
-    VERBOSE_LOGGING="false"
+    VERBOSE_LOGGING="false" \
+    S6_LOGGING="0"
 
 COPY rootfs/ /
 
@@ -21,6 +22,7 @@ RUN set -x && \
     KEPT_PACKAGES+=(ca-certificates) && \
     KEPT_PACKAGES+=(curl) & \
     KEPT_PACKAGES+=(gnupg) && \
+    KEPT_PACKAGES+=(nginx-light) && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     "${KEPT_PACKAGES[@]}" \
@@ -37,6 +39,14 @@ RUN set -x && \
     apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin -y --no-install-recommends  && \
     pushd /monitor-hub && \
     python3 -m pip install --no-cache-dir --break-system-packages -r requirements.txt && \
+    popd && \
+    # set up nginx
+    mkdir -p /var/log/nginx && \
+    cp /etc/nginx.monitor-hub/sites-enabled/monitor-hub /etc/nginx/sites-enabled/monitor-hub && \
+    rm /etc/nginx/sites-enabled/default && \
+    rm /etc/nginx/nginx.conf && \
+    cp /etc/nginx.monitor-hub/nginx.conf /etc/nginx/nginx.conf && \
+    rm -rv /etc/nginx.monitor-hub && \
     # Clean up
     rm -rf /src/* /tmp/* /var/lib/apt/lists/*
 
