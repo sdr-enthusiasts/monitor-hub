@@ -1,4 +1,3 @@
 #!/command/execlineb
 
-python3 /monitor-hub/monitor-hub.py
-```
+/etc/s6-overlay/scripts/monitor-hub
