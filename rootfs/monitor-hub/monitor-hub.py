@@ -35,6 +35,7 @@ container_classes = []
 containers = []
 
 keep_watching = True
+container_ready = False
 
 
 class MonitorContainer:
@@ -70,25 +71,28 @@ class MonitorContainer:
     # TODO: Capture and politely handle program exit
 
     def container_logs(self, container):
+        global container_ready
         for line in container.logs(stream=True, timestamps=True):
             # print(format_line(line.decode("utf-8"), container.name))
             self.log.append(line.decode("utf-8").strip())
-            socketio.emit(
-                "new_log",
-                {
-                    "name": container.name,
-                    "log": line.decode("utf-8").strip(),
-                },
-                namespace="/main",
-            )
+            if container_ready:
+                socketio.emit(
+                    "new_log",
+                    {
+                        "name": container.name,
+                        "log": line.decode("utf-8").strip(),
+                    },
+                    namespace="/main",
+                )
 
         # the container has exited so we can remove it from the list
         print("Container {} has exited".format(container.name))
-        socketio.emit(
-            "container_exit",
-            {"name": container.name},
-            namespace="/main",
-        )
+        if container_ready:
+            socketio.emit(
+                "container_exit",
+                {"name": container.name},
+                namespace="/main",
+            )
         containers.remove(container.name)
         # remove container from the list of container classes
         container_classes.remove(self)
@@ -114,6 +118,7 @@ def pause_and_check():
 
 # function to check for new containers and start monitoring them
 def check_for_new_containers():
+    global container_ready
     for container in docker.from_env().containers.list():
         if container.name not in containers:
             # create a thread for each container
@@ -122,19 +127,21 @@ def check_for_new_containers():
             print(f"Starting to monitor {container.name}")
             containers.append(container.name)
             print(f"New container: {c.get_name()}")
-            socketio.emit(
-                "new_container",
-                {
-                    "container": {
-                        "status": "running",
-                        "name": c.get_name(),
-                    }
-                },
-                namespace="/main",
-            )
+            if container_ready:
+                socketio.emit(
+                    "new_container",
+                    {
+                        "container": {
+                            "status": "running",
+                            "name": c.get_name(),
+                        }
+                    },
+                    namespace="/main",
+                )
             # start the thread
             t.start()
             container_classes.append(c)
+    container_ready = True
 
 
 # main route
@@ -167,5 +174,9 @@ if __name__ == "__main__":
     check_thread = Thread(target=pause_and_check)
     check_thread.start()
     # start the thread
+    print("Starting to check for new containers. Application is not ready.")
+    while not container_ready:
+        time.sleep(1)
+    print("Initial Container check is done. Application is ready.")
 
     socketio.run(app, host="0.0.0.0", port=8888)
