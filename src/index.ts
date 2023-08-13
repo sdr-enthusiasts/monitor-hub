@@ -54,7 +54,6 @@ $((): void => {
   });
 
   socket.on("new_log", (data: any) => {
-    // console.log("New Log Message: ", data);
     // add the log message to the container
     if (!containers[data.name]) {
       console.error("Container not found: ", data.name);
@@ -62,7 +61,12 @@ $((): void => {
     }
     containers[data.name].logs.push(data.log);
 
+    while (containers[data.name].logs.length > 100) {
+      containers[data.name].logs.shift();
+    }
+
     // if the container is active, add the log to the page
+
     if (active_container == data.name) {
       $("#container-logs").append(generate_log_element(data.log));
     }
@@ -83,7 +87,7 @@ function show_logs(name: any) {
       $(this).removeClass("selected");
     }
   });
-
+  active_container = name;
   let logs = containers[name].logs;
 
   // add the logs to the page
