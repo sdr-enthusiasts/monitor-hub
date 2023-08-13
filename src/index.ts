@@ -1,4 +1,5 @@
 import { io, Socket } from "socket.io-client";
+import stripAnsi from "strip-ansi";
 
 declare const window: any;
 let containers: any = {};
@@ -103,7 +104,7 @@ window.show_logs = function (name: any) {
 };
 
 function generate_log_element(log: any) {
-  return `<p>${log}</p>`;
+  return `<p>${stripAnsi(log)}</p>`;
 }
 
 function generate_li_element(name: String) {
