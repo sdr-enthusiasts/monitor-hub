@@ -42,7 +42,7 @@ The webpage is a bit basic. While this entire project doesn't need much complica
 
 The webpage is unusable on mobile. This will be improved in future versions.
 
-The page does not auto-scroll to the bottom. This will be improved in future versions.
+~~The page does not auto-scroll to the bottom. This will be improved in future versions.~~
 
 If a container SHOULD be running, but it is not, the webpage will not show it. This will be improved in future versions.
 

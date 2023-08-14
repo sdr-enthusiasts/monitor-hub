@@ -2,3 +2,5 @@ dist
 node_modules
 package-lock.json
 rootfs/monitor-hub/static/js/index.bundle.js
+rootfs/monitor-hub/static/js/index.bundle.js.LICENSE.txt
+rootfs/monitor-hub/static/js/index.bundle.js.map

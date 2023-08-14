@@ -4,6 +4,7 @@ import stripAnsi from "strip-ansi";
 declare const window: any;
 let containers: any = {};
 let active_container: any = null;
+let should_scroll = true;
 
 $((): void => {
   let path = document.location.origin + document.location.pathname;
@@ -54,6 +55,21 @@ $((): void => {
     }
   });
 
+  // There may be an issue where the auto scroll in to view is happening when a new log entry comes in.
+  // This may prevent the auto-scrolling from working. Will need more testing.
+  $("#container-logs").on("scroll", function (e) {
+    console.log(e);
+    // if the user is scrolling unless the user is at the bottom
+    if (
+      $("#container-logs").scrollTop() + $("#container-logs").height() <
+      $("#container-logs")[0].scrollHeight
+    ) {
+      should_scroll = false;
+    } else {
+      should_scroll = true;
+    }
+  });
+
   socket.on("new_log", (data: any) => {
     // add the log message to the container
     if (!containers[data.name]) {
@@ -75,6 +91,15 @@ $((): void => {
       while ($("#container-logs p").length > 100) {
         $("#container-logs p").first().remove();
       }
+
+      if (should_scroll) {
+        // get the total count of p tags
+        let count = $("#container-logs p").length;
+
+        $("#container-logs p")
+          .get(count - 1)
+          .scrollIntoView({ behavior: "smooth" });
+      }
     }
   });
 
@@ -83,6 +108,7 @@ $((): void => {
 
 function show_logs(name: any) {
   // clear the log list
+  should_scroll = true;
   $("#container-logs").empty();
 
   // loop through all of the li elements and remove the class "selected" and append the class "selected" if the id matches the name
