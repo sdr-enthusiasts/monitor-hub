@@ -58,7 +58,6 @@ $((): void => {
   // There may be an issue where the auto scroll in to view is happening when a new log entry comes in.
   // This may prevent the auto-scrolling from working. Will need more testing.
   $("#container-logs").on("scroll", function (e) {
-    console.log(e);
     // if the user is scrolling unless the user is at the bottom
     if (
       $("#container-logs").scrollTop() + $("#container-logs").height() <
