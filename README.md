@@ -1,5 +1,11 @@
 # Monitor Hub
 
+## Security Notice
+
+This container is not intended to be exposed to the internet. It is intended to be used on a local network. If you expose this container to the internet, you do so at your own risk. You will need to expose `/var/run/docker.sock` to the container in order for it to run properly, and in doing so you are giving this container the ability to control docker, as well as for a malicious user to exploit any known/unknown vulnerabilities in docker or the web front end to potentially gain access to your host.
+
+All of that said, this container does NOT do do anything with docker.sock other than read logs from it. It will not attempt to control docker in any way. Additionally, if the container cannot be accessed outside of your local network (ie, you are not doing port forwarding on your router), then the risk is significantly reduced to basically zero.
+
 ## Overview
 
 Monitor Hub is a simple docker container that enables you to view logs from all of the running docker services. It was created to make it easier for users of the SDR-E (and probably any docker user) to view the logs of all of the running services in one place without SSH-ing in to the box and running `docker logs` on each container.
