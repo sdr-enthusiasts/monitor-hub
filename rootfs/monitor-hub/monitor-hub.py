@@ -113,6 +113,10 @@ class MonitorContainer:
             db.close()
         except Exception as e:
             print(f"Error clearing logs: {e}")
+        finally:
+            containers.remove(self.name)
+            # remove container from the list of container classes
+            container_classes.remove(self)
 
     def get_log(self, num_lines=50):
         results = []
@@ -209,10 +213,7 @@ class MonitorContainer:
                 {"name": container.name},
                 namespace="/main",
             )
-
-        containers.remove(container.name)
-        # remove container from the list of container classes
-        container_classes.remove(self)
+        self.clear_logs()
 
 
 def exit_handler(signal_received, _):
@@ -248,7 +249,7 @@ def check_for_new_containers():
             print(f"New container: {c.get_name()}")
             if container_ready:
                 socketio.emit(
-                    "new_container",
+                    "container_start",
                     {
                         "name": c.get_name(),
                     },
