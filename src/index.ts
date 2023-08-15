@@ -15,21 +15,35 @@ let active_container: string | null = null;
 let should_scroll: boolean = true;
 
 $((): void => {
+  // There may be an issue where the auto scroll in to view is happening when a new log entry comes in.
+  // This may prevent the auto-scrolling from working. Will need more testing.
+  $("#container-logs").on("scroll", function (_) {
+    // Ensure we have a valid scroll_logs element
+    const scroll_logs: JQuery<HTMLElement> = $("#container-logs");
+    const scrollTop: number | undefined = scroll_logs.scrollTop();
+    const scrollHeight: number | undefined = scroll_logs[0].scrollHeight;
+
+    if (!scroll_logs || scrollTop === undefined || scrollHeight === undefined)
+      return;
+
+    // if the user is scrolling unless the user is at the bottom
+    if (scrollHeight + scrollHeight < scroll_logs[0].scrollHeight) {
+      should_scroll = false;
+    } else {
+      should_scroll = true;
+    }
+  });
+
   //connect to the socket server.
   const socket: Socket = io(`${document.location.origin}/main`, {
     path: "/socket.io",
   });
 
-  socket.on("connect", () => {
-    console.log("connected");
-  });
+  socket.on("connect", () => {});
 
-  socket.on("disconnect", () => {
-    console.error("disconnected");
-  });
+  socket.on("disconnect", () => {});
 
   socket.on("container_start", (data: ContainerStart) => {
-    console.log("New Container: ", data.name);
     // add the container to containers
     containers[data.name] = {
       name: data.name,
@@ -40,7 +54,6 @@ $((): void => {
   });
 
   socket.on("connect_data", (data: OnConnectContainersAndLogs) => {
-    console.log("Connect Data: ", data);
     containers = data;
     generate_li_list();
     active_container = get_first_container_sorted();
@@ -48,7 +61,6 @@ $((): void => {
   });
 
   socket.on("container_exit", (data: ContainerExit) => {
-    console.log("Container Exit: ", data);
     // remove the container from containers
     delete containers[data.name];
 
@@ -59,32 +71,10 @@ $((): void => {
     }
   });
 
-  // There may be an issue where the auto scroll in to view is happening when a new log entry comes in.
-  // This may prevent the auto-scrolling from working. Will need more testing.
-  $("#container-logs").on("scroll", function (_) {
-    // Ensure we have a valid scroll_logs element
-    const scroll_logs: JQuery<HTMLElement> = $("#container-logs");
-    const scrollTop: number | undefined = scroll_logs.scrollTop();
-    const scrollHeight: number | undefined = scroll_logs[0].scrollHeight;
-
-    if (!scroll_logs || !scrollTop || !scrollHeight) {
-      console.error("Cannot scroll right now");
-      return;
-    }
-    // if the user is scrolling unless the user is at the bottom
-    if (scrollHeight + scrollHeight < scroll_logs[0].scrollHeight) {
-      should_scroll = false;
-    } else {
-      should_scroll = true;
-    }
-  });
-
   socket.on("new_log", (data: NewLog) => {
     // add the log message to the container
-    if (!containers[data.name]) {
-      console.error("Container not found: ", data.name);
-      return;
-    }
+    if (!containers[data.name]) return;
+
     containers[data.name].logs.push(data);
 
     while (containers[data.name].logs.length > 100) {
@@ -113,8 +103,6 @@ $((): void => {
       }
     }
   });
-
-  console.log("loaded");
 });
 
 function show_logs(name: string) {
@@ -147,7 +135,9 @@ window.show_logs = function (name: string) {
 
 function generate_log_element(log: ShortLogs) {
   // BE CAREFUL HERE. IF YOU CHANGE THE P TAG TO A DIFFERENT TAG, YOU MUST CHANGE THE REMOVE LOGS CODE IN THE NEW_LOG EVENT
-  return `<p>${log.time} | ${stripAnsi(log.log)}</p>`;
+  return `<p>${new Date(log.time * 1000).toLocaleString()} | ${stripAnsi(
+    log.log
+  )}</p>`;
 }
 
 function generate_li_element(name: string) {

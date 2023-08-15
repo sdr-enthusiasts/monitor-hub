@@ -14,7 +14,7 @@ from signal import signal, SIGINT
 from sys import exit
 import os
 
-from sqlalchemy import create_engine, Column, Integer, String, Text, Date
+from sqlalchemy import create_engine, Column, Integer, String, Text, Date, Float
 from sqlalchemy.sql import text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -60,7 +60,7 @@ class Logs(LogEntries):
     __tablename__ = "logs"
     id = Column(Integer, primary_key=True)
     container = Column(String(255), nullable=False)
-    time = Column(Date, nullable=False)
+    time = Column(Float, nullable=False)
     log = Column(Text, nullable=False)
 
 
@@ -104,13 +104,47 @@ class MonitorContainer:
     def __ne__(self, other):
         return not (self == other)
 
-    def get_log(self, num_lines=50):
-        # get the logs from the database
-        session = db_session()
-        result = session.query(Logs).order_by(Logs.time.desc()).limit(50)
+    def clear_logs(self):
+        # clear the logs from the database
+        try:
+            db = db_session()
+            db.query(Logs).filter(Logs.container == self.name).delete()
+            db.commit()
+            db.close()
+        except Exception as e:
+            print(f"Error clearing logs: {e}")
 
-        # convert the result to a list of dictionaries
-        return [query_to_dict(x) for x in result]
+    def get_log(self, num_lines=50):
+        results = []
+        # get the logs from the database
+        try:
+            session = db_session()
+            result = (
+                session.query(Logs)
+                .where(Logs.container == self.name)
+                .order_by(Logs.time.asc())
+                .limit(num_lines)
+            )
+
+            # convert the result to a list of dictionaries
+            results = [query_to_dict(x) for x in result]
+
+            for result in results:
+                result.pop("id", None)
+        except Exception as e:
+            print(f"Error getting logs: {e}")
+        finally:
+            return results
+
+    def get_log_short(self, num_lines=50):
+        # get the logs from the database
+        results = self.get_log(num_lines)
+
+        # remove the `container`   key from the dictionary
+        for result in results:
+            result.pop("container", None)
+
+        return results
 
     def get_name(self):
         return f"{self.name}"
@@ -141,7 +175,9 @@ class MonitorContainer:
                 time_stamp = time_stamp[:22] + time_stamp[28:]
                 # convert the time stamp to a unix timestamp with milliseconds
 
-                time_stamp = datetime.strptime(time_stamp, "%Y-%m-%dT%H:%M:%S.%f%z")
+                time_stamp = datetime.strptime(
+                    time_stamp, "%Y-%m-%dT%H:%M:%S.%f%z"
+                ).timestamp()
 
                 # send the log entry to the database
                 db = db_session()
@@ -154,7 +190,7 @@ class MonitorContainer:
                         "new_log",
                         {
                             "name": container.name,
-                            "time": time_stamp.timestamp(),
+                            "time": time_stamp,
                             "log": entry,
                         },
                         namespace="/main",
@@ -173,6 +209,7 @@ class MonitorContainer:
                 {"name": container.name},
                 namespace="/main",
             )
+
         containers.remove(container.name)
         # remove container from the list of container classes
         container_classes.remove(self)
@@ -237,12 +274,11 @@ def main_connect():
     output = {}
 
     for container in container_classes:
-        print(f"{container.get_log()}")
-        # output[container.name] = {
-        #     "logs": container.get_log(),
-        #     "status": "running",
-        #     "name": container.name,
-        # }
+        output[container.name] = {
+            "logs": container.get_log_short(),
+            "status": "running",
+            "name": container.name,
+        }
 
     socketio.emit("connect_data", output, namespace="/main", to=requester)
 
@@ -250,6 +286,20 @@ def main_connect():
 # main function
 if __name__ == "__main__":
     signal(SIGINT, exit_handler)
+
+    print("Clearing database")
+    try:
+        # make sure database is empty
+        db = db_session()
+        db.query(Logs).delete()
+        db.commit()
+        db.close()
+    except Exception as e:
+        print(f"Error clearing database: {e}")
+        # exit
+        exit(1)
+    print("Database cleared")
+
     # create a thread to check for new containers
     check_thread = Thread(target=pause_and_check)
     check_thread.start()
