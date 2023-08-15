@@ -16,7 +16,7 @@ let should_scroll: boolean = true;
 
 $((): void => {
   //connect to the socket server.
-  let socket: Socket = io(`${document.location.origin}/main`, {
+  const socket: Socket = io(`${document.location.origin}/main`, {
     path: "/socket.io",
   });
 
@@ -63,9 +63,9 @@ $((): void => {
   // This may prevent the auto-scrolling from working. Will need more testing.
   $("#container-logs").on("scroll", function (_) {
     // Ensure we have a valid scroll_logs element
-    let scroll_logs: JQuery<HTMLElement> = $("#container-logs");
-    let scrollTop: number | undefined = scroll_logs.scrollTop();
-    let scrollHeight: number | undefined = scroll_logs[0].scrollHeight;
+    const scroll_logs: JQuery<HTMLElement> = $("#container-logs");
+    const scrollTop: number | undefined = scroll_logs.scrollTop();
+    const scrollHeight: number | undefined = scroll_logs[0].scrollHeight;
 
     if (!scroll_logs || !scrollTop || !scrollHeight) {
       console.error("Cannot scroll right now");
@@ -103,9 +103,9 @@ $((): void => {
 
       if (should_scroll) {
         // get the total count of p tags
-        let count: number = $("#container-logs p").length;
+        const count: number = $("#container-logs p").length;
 
-        let logs: HTMLElement | undefined = $("#container-logs p").get(
+        const logs: HTMLElement | undefined = $("#container-logs p").get(
           count - 1
         );
 
@@ -131,11 +131,11 @@ function show_logs(name: string) {
     }
   });
   active_container = name;
-  let logs: ShortLogs[] = containers[name].logs;
+  const logs: ShortLogs[] = containers[name].logs;
 
   // add the logs to the page
-  for (let log_id in logs) {
-    let log = logs[log_id];
+  for (const log_id in logs) {
+    const log = logs[log_id];
     $("#container-logs").append(generate_log_element(log));
   }
 }
@@ -150,7 +150,7 @@ function generate_log_element(log: ShortLogs) {
   return `<p>${log.time} | ${stripAnsi(log.log)}</p>`;
 }
 
-function generate_li_element(name: String) {
+function generate_li_element(name: string) {
   return `<li id="${name}" onclick="show_logs('${name}')">${name}</li>`;
 }
 
@@ -158,14 +158,14 @@ function generate_li_list() {
   // clear the container list
   $("#container-list").empty();
 
-  let containerNames: string[] = Object.keys(containers);
+  const containerNames: string[] = Object.keys(containers);
   containerNames.sort((a, b) => {
     return a.toUpperCase().localeCompare(b.toUpperCase());
   });
 
   // add the containers to the page
-  for (let container_id in containerNames) {
-    let container = containerNames[container_id];
+  for (const container_id in containerNames) {
+    const container = containerNames[container_id];
     $("#container-list").append(
       generate_li_element(containers[container].name)
     );
@@ -173,7 +173,7 @@ function generate_li_list() {
 }
 
 function get_first_container_sorted() {
-  let containerNames: string[] = Object.keys(containers);
+  const containerNames: string[] = Object.keys(containers);
   containerNames.sort((a, b) => {
     return a.toUpperCase().localeCompare(b.toUpperCase());
   });
