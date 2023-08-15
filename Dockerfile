@@ -11,7 +11,8 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 ENV S6_BEHAVIOUR_IF_STAGE2_FAILS=2 \
     VERBOSE_LOGGING="false" \
-    S6_LOGGING="0"
+    S6_LOGGING="0" \
+    MONITOR_HUB_DATABASE_PATH="/run/monitor-hub/monitor-hub.sqlite"
 
 COPY rootfs/ /
 COPY /package.json /package.json

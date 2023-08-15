@@ -5,12 +5,22 @@ import eventlet
 eventlet.monkey_patch()
 
 import time
+from datetime import datetime
 import docker
 from threading import Thread
 from flask_socketio import SocketIO
 from flask import Flask, render_template, request, redirect, url_for
 from signal import signal, SIGINT
 from sys import exit
+import os
+
+from sqlalchemy import create_engine, Column, Integer, String, Text, Date
+from sqlalchemy.sql import text
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.declarative import DeclarativeMeta
+
+from sqlalchemy.engine.reflection import Inspector
 
 app = Flask(__name__)
 # Make the browser not cache files if running in dev mode
@@ -37,11 +47,47 @@ containers = []
 keep_watching = True
 container_ready = False
 
+# set up the database
+
+# get the database path from the environment variable
+db_path = f"sqlite:///{os.getenv('MONITOR_HUB_DATABASE_PATH', default='/run/monitor-hub/monitor-hub.sqlite')}"
+database = create_engine(db_path)
+db_session = sessionmaker(bind=database)
+LogEntries = declarative_base()
+
+
+class Logs(LogEntries):
+    __tablename__ = "logs"
+    id = Column(Integer, primary_key=True)
+    container = Column(String(255), nullable=False)
+    time = Column(Date, nullable=False)
+    log = Column(Text, nullable=False)
+
+
+LogEntries.metadata.create_all(database)
+
+
+def query_to_dict(obj):
+    if isinstance(obj.__class__, DeclarativeMeta):
+        # an SQLAlchemy class
+        fields = {}
+        for field in [
+            x
+            for x in dir(obj)
+            if not x.startswith("_")
+            and x != "metadata"
+            and x is not None
+            and x != ""
+            and x != "registry"
+        ]:
+            fields[field] = obj.__getattribute__(field)
+        return fields
+    return None
+
 
 class MonitorContainer:
     def __init__(self, name=""):
         self.name = name
-        self.log = []
 
     def __str__(self):
         return self.name
@@ -59,18 +105,15 @@ class MonitorContainer:
         return not (self == other)
 
     def get_log(self, num_lines=50):
-        if not num_lines:
-            return self.log
+        # get the logs from the database
+        session = db_session()
+        result = session.query(Logs).order_by(Logs.time.desc()).limit(50)
 
-        return self.log[-num_lines:]
+        # convert the result to a list of dictionaries
+        return [query_to_dict(x) for x in result]
 
     def get_name(self):
         return f"{self.name}"
-
-    def clean_log(self):
-        while len(self.log) > 50:
-            # remove the first element
-            self.log.pop(0)
 
     # function to monitor a container and append the logs for processing to clients
 
@@ -88,20 +131,40 @@ class MonitorContainer:
                 continue
 
             buffered_line = buffered_line.strip()
-            # print(format_line(line.decode("utf-8"), container.name))
-            self.log.append(buffered_line)
-            self.clean_log()
 
-            if container_ready:
-                socketio.emit(
-                    "new_log",
-                    {
-                        "name": container.name,
-                        "log": buffered_line,
-                    },
-                    namespace="/main",
-                )
-            buffered_line = ""
+            # grab the time stamp from the log entry
+            try:
+                time_stamp, entry = buffered_line.split(" ", 1)
+                # reduce the millisecond precision to 3 digits because python is stupid
+                # the milliseconds will look like something like .675967748
+                # we want to reduce it to .675. Remove position 22 through 28
+                time_stamp = time_stamp[:22] + time_stamp[28:]
+                # convert the time stamp to a unix timestamp with milliseconds
+
+                time_stamp = datetime.strptime(time_stamp, "%Y-%m-%dT%H:%M:%S.%f%z")
+
+                # send the log entry to the database
+                db = db_session()
+                db.add(Logs(container=container.name, time=time_stamp, log=entry))
+                db.commit()
+                db.close()
+                # send the log entry to the client
+                if container_ready:
+                    socketio.emit(
+                        "new_log",
+                        {
+                            "name": container.name,
+                            "time": time_stamp.timestamp(),
+                            "log": entry,
+                        },
+                        namespace="/main",
+                    )
+            except ValueError as e:
+                print(f"Error parsing. Error: {e}, Time: {time_stamp}, Entry: {entry}")
+            except Exception as e:
+                print(f"Error: {e}")
+            finally:
+                buffered_line = ""
         # the container has exited so we can remove it from the list
         print("Container {} has exited".format(container.name))
         if container_ready:
@@ -150,10 +213,7 @@ def check_for_new_containers():
                 socketio.emit(
                     "new_container",
                     {
-                        "container": {
-                            "status": "running",
-                            "name": c.get_name(),
-                        }
+                        "name": c.get_name(),
                     },
                     namespace="/main",
                 )
@@ -177,11 +237,12 @@ def main_connect():
     output = {}
 
     for container in container_classes:
-        output[container.name] = {
-            "logs": container.get_log(),
-            "status": "running",
-            "name": container.name,
-        }
+        print(f"{container.get_log()}")
+        # output[container.name] = {
+        #     "logs": container.get_log(),
+        #     "status": "running",
+        #     "name": container.name,
+        # }
 
     socketio.emit("connect_data", output, namespace="/main", to=requester)
 
