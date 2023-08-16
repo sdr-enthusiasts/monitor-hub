@@ -55,6 +55,7 @@ RUN set -x && \
     rm -rv /etc/nginx.monitor-hub && \
     VERSION=$(cat /package.json| grep 'version' | cut -d '"' -f 4) && \
     echo "${VERSION}" > /CONTAINER_VERSION && \
+    mkdir -p /run/monitor-hub && \
     # Clean up
     apt-get remove -y "${TEMP_PACKAGES[@]}" && \
     apt-get autoremove -y && \
