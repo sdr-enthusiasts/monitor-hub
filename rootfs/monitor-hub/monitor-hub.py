@@ -49,11 +49,15 @@ container_ready = False
 
 # set up the database
 
-# get the database path from the environment variable
-db_path = f"sqlite:///{os.getenv('MONITOR_HUB_DATABASE_PATH', default='/run/monitor-hub/monitor-hub.sqlite')}"
-database = create_engine(db_path)
-db_session = sessionmaker(bind=database)
-LogEntries = declarative_base()
+try:
+    # get the database path from the environment variable
+    db_path = f"sqlite:///{os.getenv('MONITOR_HUB_DATABASE_PATH', default='/run/monitor-hub/monitor-hub.sqlite')}"
+    database = create_engine(db_path)
+    db_session = sessionmaker(bind=database)
+    LogEntries = declarative_base()
+except Exception as e:
+    print(f"Error setting up database: {e}")
+    exit(1)
 
 
 class Logs(LogEntries):
@@ -170,9 +174,14 @@ class MonitorContainer:
 
             buffered_line = buffered_line.strip()
 
-            # grab the time stamp from the log entry
             try:
                 time_stamp, entry = buffered_line.split(" ", 1)
+            except Exception as e:
+                time_stamp = buffered_line.strip()
+                entry = ""
+
+            # grab the time stamp from the log entry
+            try:
                 # reduce the millisecond precision to 3 digits because python is stupid
                 # the milliseconds will look like something like .675967748
                 # we want to reduce it to .675. Remove position 22 through 28
