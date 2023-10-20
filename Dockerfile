@@ -1,4 +1,4 @@
-FROM node:20.8.1-slim AS typescript-builder
+FROM node:21.0.0-slim AS typescript-builder
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 COPY / /
