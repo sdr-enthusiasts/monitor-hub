@@ -19,14 +19,10 @@ on:
     branches:
       - main
     # Don't trigger if it's just a documentation update
-    paths-ignore:
-      - "**.md"
-      - "**.MD"
-      - "**.yml"
-      - "LICENSE"
-      - ".gitattributes"
-      - ".gitignore"
-      - ".dockerignore"
+    paths:
+      - "rust/**"
+      - "Dockerfile**"
+      - "rootfs/**"
 
   # Build and deploy the image nightly (to ensure we pick up any security updates)
   # schedule:
