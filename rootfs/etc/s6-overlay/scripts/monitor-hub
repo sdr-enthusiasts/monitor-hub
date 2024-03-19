@@ -1,4 +1,5 @@
 #!/command/with-contenv bash
 
+mkdir -p /run/monitor-hub
 exec 2>&1
 exec python3 -u /monitor-hub/monitor-hub.py
