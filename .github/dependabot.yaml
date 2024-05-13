@@ -16,3 +16,10 @@ updates:
       interval: weekly
     assignees:
       - "fredclausen"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: weekly
+    assignees:
+      - "fredclausen"
