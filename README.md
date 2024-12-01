@@ -15,7 +15,6 @@ Monitor Hub is a simple docker container that enables you to view logs from all 
 ```yaml
   monitor-hub:
     image: ghcr.io/sdr-enthusiasts/monitor-hub:latest
-    tty: true
     container_name: monitor-hub
     restart: always
     ports:
